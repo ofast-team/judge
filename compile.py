@@ -5,34 +5,34 @@ import constants
 # there are no differences between the two files, and false otherwise
 def diff_check(user_file, expected_file):
     diff_result = subprocess.run(["diff", user_file, expected_file], capture_output=True)
-    if bytes.decode(diff_result.stdout) == "":
-        return True
-    else:
-        return False
+    return bytes.decode(diff_result.stdout) == ""
 
 # This function takes in (as strings) the path to the solution file and input folders along
 # with which type of checker will be used
 def compile_and_run(solution, input_folder, check_type):
     
     # setting up filename information:
-    # name is the path/file name without the extention, and lang is the extention
-    arr = solution.split(".")
-    if len(arr) < 2:
+    # name is the path/file name without the extension, and lang is the extension
+    split_ind = solution.rfind(".")
+    if split_ind == -1:
         print("Invalid solution file:", solution)
-    lang = arr[len(arr) - 1]
-    name = ""
-    for i in range(len(arr) - 1):
-        name += arr[i]
-        if (i != len(arr) - 2):
-            name += "."
+        exit(1)
+    lang = solution[split_ind + 1: len(solution)]
+    name = solution[0 : split_ind]
 
     # Compiles (if neccesary) and sets up run which stores how to run the user
     # program based on the language.
     run = []
     if lang == "py":
         run = ["python3", solution]
-    elif lang == "cpp" or lang == "c++" or lang == "c":
+    elif lang == "cpp" or lang == "c++":
         result = subprocess.run(["g++", "-g", "-O2", "-std=c++17", "-o", "userprogram", solution, "-lm"], capture_output=True)
+        if result.returncode != 0:
+            print("Compilation Error!")
+            exit(1)
+        run = ["./userprogram"]
+    elif lang == "c":
+        result = subprocess.run(["gcc", "-g", "-O2", "-std=c11", "-o", "userprogram", solution, "-lm"], capture_output=True)
         if result.returncode != 0:
             print("Compilation Error!")
             exit(1)
@@ -43,7 +43,7 @@ def compile_and_run(solution, input_folder, check_type):
             print("Compilation Error!")
             exit(1)
         path = name.split("/")
-        class_name = path[len(path) - 1]
+        class_name = path[-1]
         run = ["java", "-Xss64m", "-Xmx2048m", class_name]
     else:
         print("Language", lang ,"not supported!")
@@ -103,6 +103,10 @@ def compile_and_run(solution, input_folder, check_type):
         if output_file_string == "":
             print("No output file found in", case)
             skip = True
+
+        if skip:
+            print("Skipping case...", case)
+            continue
 
         try:
             input_file = open(path + input_file_string, "r")
