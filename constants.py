@@ -7,14 +7,9 @@ class Verdict(Enum):
     memory_limit = 4
     wrong_answer = 5
     accepted = 6
-    user_error = 98
     system_error = 99
 
 class Checker(Enum):
     diff = 1
     token = 2
     epsilon = 3
-
-MAX_TIME_LIMIT = 10
-
-TIME_OUT = 124
