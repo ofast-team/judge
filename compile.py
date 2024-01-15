@@ -1,66 +1,67 @@
 import subprocess
 import constants
+import checkers
 
 # This is the diff_check function it takes in (as strings) two file names, and returns True if
 # there are no differences between the two files, and false otherwise
-def diff_check(user_file, expected_file):
-    diff_result = subprocess.run(["diff", user_file, expected_file], capture_output=True)
-    return bytes.decode(diff_result.stdout) == ""
+
 
 # This function takes in (as strings) the path to the solution file and input folders along
 # with which type of checker will be used
-def compile_and_run(solution, input_folder, check_type):
+def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX_TIME_LIMIT):
     
     # setting up filename information:
     # name is the path/file name without the extension, and lang is the extension
     split_ind = solution.rfind(".")
     if split_ind == -1:
         print("Invalid solution file:", solution)
-        exit(1)
+        return [constants.Verdict.user_error]
     lang = solution[split_ind + 1: len(solution)]
     name = solution[0 : split_ind]
+    time_limit = min(time_limit, constants.MAX_TIME_LIMIT)
 
     # Compiles (if neccesary) and sets up run which stores how to run the user
     # program based on the language.
-    run = []
+    run = ["timeout", f"{time_limit}s"]
     if lang == "py":
-        run = ["python3", solution]
+        run += ["python3", solution]
     elif lang == "cpp" or lang == "c++":
         result = subprocess.run(["g++", "-g", "-O2", "-std=c++17", "-o", "userprogram", solution, "-lm"], capture_output=True)
         if result.returncode != 0:
             print("Compilation Error!")
-            exit(1)
-        run = ["./userprogram"]
+            return [constants.Verdict.compilation_error]
+        run += ["timeout", f"{time_limit}s", "./userprogram"]
     elif lang == "c":
         result = subprocess.run(["gcc", "-g", "-O2", "-std=c11", "-o", "userprogram", solution, "-lm"], capture_output=True)
         if result.returncode != 0:
             print("Compilation Error!")
-            exit(1)
-        run = ["./userprogram"]
+            return [constants.Verdict.compilation_error]
+        run += ["./userprogram"]
     elif lang == "java":
         result = subprocess.run(["javac", "-d", "./", solution], capture_output=True)
         if result.returncode != 0:
             print("Compilation Error!")
-            exit(1)
+            return [constants.Verdict.compilation_error]
         path = name.split("/")
         class_name = path[-1]
-        run = ["java", "-Xss64m", "-Xmx2048m", class_name]
+        run += ["java", "-Xss64m", "-Xmx2048m", class_name]
     else:
         print("Language", lang ,"not supported!")
-        exit(1)
+        return [constants.Verdict.user_error]
     
     case_list = subprocess.run(["ls", input_folder], capture_output=True)
     if case_list.returncode == 2:
         print(input_folder, "does not exist!")
-        exit(1)
+        return [constants.Verdict.user_error]
 
     is_directory = subprocess.run(["test", "-d", input_folder], capture_output=True)
     if is_directory.returncode == 1:
         print(input_folder, "is not a directory!")
-        exit(1)
+        return [constants.Verdict.user_error]
 
     # Running each test case
     cases = bytes.decode(case_list.stdout).split('\n')
+    verdict_arr = []
     for case in cases:
         if case == "":
             continue
@@ -105,18 +106,25 @@ def compile_and_run(solution, input_folder, check_type):
             skip = True
 
         if skip:
+            verdict_arr.append(constants.Verdict.user_error)
             print("Skipping case...", case)
             continue
 
         try:
             input_file = open(path + input_file_string, "r")
         except:
+            verdict_arr.append(constants.Verdict.system_error)
             print("Unable to open", input_file_string)
             skip = True
+
+        if skip:
+            print("Skipping case...", case)
+            continue
 
         try:
             output_file = open("user.out", "w")
         except:
+            verdict_arr.append(constants.Verdict.system_error)
             print("Unable to open file for outputting user data")
             skip = True
 
@@ -128,13 +136,24 @@ def compile_and_run(solution, input_folder, check_type):
         input_file.close()
         output_file.close()
 
-        # TODO: pretty sure this will cause problems if users don't return 0 in c but im not
-        # dealing with that rn
+        # Ensuring that there were no problems during the runtime
+        if cur_result.returncode == constants.TIME_OUT:
+            verdict_arr.append(constants.Verdict.time_limit)
+            print(case, ": TLE")
+            subprocess.run(["rm", "user.out"])
+            break
         if cur_result.returncode != 0:
+            verdict_arr.append(constants.Verdict.runtime_error)
             print(case, ": RTE")
+            subprocess.run(["rm", "user.out"])
             break
         if check_type == constants.Checker.diff:
-            if diff_check("user.out", path + output_file_string):
+            if checkers.diff_check("user.out", path + output_file_string):
+                verdict_arr.append(constants.Verdict.accepted)
                 print(case, ": AC")
             else:
+                verdict_arr.append(constants.Verdict.wrong_answer)
                 print(case, ": WA")
+        subprocess.run(["rm", "user.out"])
+
+    return verdict_arr
