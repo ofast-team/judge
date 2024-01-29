@@ -106,29 +106,25 @@ def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX
             skip = True
 
         if skip:
-            verdict_arr.append(constants.Verdict.user_error)
+            verdict_arr += constants.Verdict.user_error
             print("Skipping case...", case)
             continue
 
         try:
             input_file = open(path + input_file_string, "r")
         except:
-            verdict_arr.append(constants.Verdict.system_error)
+            verdict_arr += constants.Verdict.system_error
             print("Unable to open", input_file_string)
             skip = True
-
-        if skip:
             print("Skipping case...", case)
             continue
 
         try:
             output_file = open("user.out", "w")
         except:
-            verdict_arr.append(constants.Verdict.system_error)
+            verdict_arr += constants.Verdict.system_error
             print("Unable to open file for outputting user data")
             skip = True
-
-        if skip:
             print("Skipping case...", case)
             continue
 
@@ -138,22 +134,39 @@ def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX
 
         # Ensuring that there were no problems during the runtime
         if cur_result.returncode == constants.TIME_OUT:
-            verdict_arr.append(constants.Verdict.time_limit)
+            verdict_arr += constants.Verdict.time_limit
             print(case, ": TLE")
             subprocess.run(["rm", "user.out"])
             break
         if cur_result.returncode != 0:
-            verdict_arr.append(constants.Verdict.runtime_error)
+            verdict_arr += constants.Verdict.runtime_error
             print(case, ": RTE")
             subprocess.run(["rm", "user.out"])
             break
-        if check_type == constants.Checker.diff:
-            if checkers.diff_check("user.out", path + output_file_string):
-                verdict_arr.append(constants.Verdict.accepted)
-                print(case, ": AC")
-            else:
-                verdict_arr.append(constants.Verdict.wrong_answer)
-                print(case, ": WA")
-        subprocess.run(["rm", "user.out"])
 
+        # Run output through the specified checker
+        if check_type == constants.Checker.diff:
+            diff_result = checkers.diff_check("user.out", path + output_file_string)
+            if diff_result == constants.Verdict.accepted:
+                print(case, ": AC")
+            elif diff_result == constants.Verdict.wrong_answer:
+                print(case, ": WA")
+            else:
+                print(case, "Unknown error...")
+                diff_result = constants.Verdict.system_error
+            verdict_arr += diff_result
+
+        elif check_type == constants.Checker.token:
+            token_result = checkers.token_check("user.out", path + output_file_string)
+            if token_result == constants.Verdict.system_error:
+                print(case, ": System Error")
+            elif token_result == constants.Verdict.accepted:
+                print(case, ": AC")
+            elif token_result == constants.Verdict.wrong_answer:
+                print(case, ": WA")
+            else:
+                print(case, "Unknown error...")
+                token_result = constants.Verdict.system_error
+            verdict_arr += token_result
+        subprocess.run(["rm", "user.out"])
     return verdict_arr
