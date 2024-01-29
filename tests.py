@@ -93,3 +93,45 @@ class Test:
         result = compile.compile_and_run("./tests/general/RTE/hello.py", "./tests/general/RTE/hello", constants.Checker.diff)
         for res in result:
             assert res == constants.Verdict.runtime_error
+    
+    # Token Checker tests
+    
+    def test_token_AC_c(self):
+        result = compile.compile_and_run("./tests/token/AC/hello.c", "./tests/token/AC/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.accepted
+    
+    def test_token_AC_cpp(self):
+        result = compile.compile_and_run("./tests/token/AC/hello.cpp", "./tests/token/AC/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.accepted
+
+    def test_token_AC_java(self):
+        result = compile.compile_and_run("./tests/token/AC/hello.java", "./tests/token/AC/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.accepted
+
+    def test_token_AC_py(self):
+        result = compile.compile_and_run("./tests/token/AC/hello.py", "./tests/token/AC/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.accepted
+
+    def test_token_WA_c(self):
+        result = compile.compile_and_run("./tests/token/WA/hello.c", "./tests/token/WA/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.wrong_answer
+
+    def test_token_WA_cpp(self):
+        result = compile.compile_and_run("./tests/token/WA/hello.cpp", "./tests/token/WA/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.wrong_answer
+
+    def test_token_WA_java(self):
+        result = compile.compile_and_run("./tests/token/WA/hello.java", "./tests/token/WA/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.wrong_answer
+
+    def test_token_WA_py(self):
+        result = compile.compile_and_run("./tests/token/WA/hello.py", "./tests/token/WA/hello", constants.Checker.token)
+        for res in result:
+            assert res == constants.Verdict.wrong_answer
