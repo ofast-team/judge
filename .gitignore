@@ -1,0 +1,7 @@
+# programs generated at runtime of judge (In the future we will get these cleaned up)
+userprogram
+*.class
+
+# Cache for python programs also will try to clean these up
+*.pytest_cache
+*__pycache__
