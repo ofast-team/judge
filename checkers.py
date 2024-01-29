@@ -4,7 +4,9 @@ import constants
 def diff_check(user_file, expected_file):
     run = ["diff", user_file, expected_file]
     diff_result = subprocess.run(run, capture_output=True)
-    return bytes.decode(diff_result.stdout) == ""
+    if bytes.decode(diff_result.stdout) == "":
+        return constants.Verdict.accepted
+    return constants.Verdict.wrong_answer
 
 def token_check(user_file, expected_file, case_sensitive=True):
 
