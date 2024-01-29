@@ -3,7 +3,7 @@ import constants
 import pytest
 
 # flip this to True to avoid doing the TLE tests so testing goes faster
-fast = True
+fast = False
 
 class Test:
     # Testing to ensure that the AC verdict works properly with the c file
