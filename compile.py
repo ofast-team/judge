@@ -116,8 +116,6 @@ def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX
             verdict_arr.append(constants.Verdict.system_error)
             print("Unable to open", input_file_string)
             skip = True
-
-        if skip:
             print("Skipping case...", case)
             continue
 
@@ -127,8 +125,6 @@ def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX
             verdict_arr.append(constants.Verdict.system_error)
             print("Unable to open file for outputting user data")
             skip = True
-
-        if skip:
             print("Skipping case...", case)
             continue
 
@@ -147,13 +143,30 @@ def compile_and_run(solution, input_folder, check_type, time_limit=constants.MAX
             print(case, ": RTE")
             subprocess.run(["rm", "user.out"])
             break
-        if check_type == constants.Checker.diff:
-            if checkers.diff_check("user.out", path + output_file_string):
-                verdict_arr.append(constants.Verdict.accepted)
-                print(case, ": AC")
-            else:
-                verdict_arr.append(constants.Verdict.wrong_answer)
-                print(case, ": WA")
-        subprocess.run(["rm", "user.out"])
 
+        # Run output through the specified checker
+        if check_type == constants.Checker.diff:
+            diff_result = checkers.diff_check("user.out", path + output_file_string)
+            if diff_result == constants.Verdict.accepted:
+                print(case, ": AC")
+            elif diff_result == constants.Verdict.wrong_answer:
+                print(case, ": WA")
+            else:
+                print(case, "Unknown error...")
+                diff_result = constants.Verdict.system_error
+            verdict_arr.append(diff_result)
+
+        elif check_type == constants.Checker.token:
+            token_result = checkers.token_check("user.out", path + output_file_string)
+            if token_result == constants.Verdict.system_error:
+                print(case, ": System Error")
+            elif token_result == constants.Verdict.accepted:
+                print(case, ": AC")
+            elif token_result == constants.Verdict.wrong_answer:
+                print(case, ": WA")
+            else:
+                print(case, "Unknown error...")
+                token_result = constants.Verdict.system_error
+            verdict_arr.append(token_result)
+        subprocess.run(["rm", "user.out"])
     return verdict_arr
